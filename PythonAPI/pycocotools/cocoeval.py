@@ -57,7 +57,7 @@ class COCOeval:
     # Data, paper, and tutorials available at:  http://mscoco.org/
     # Code written by Piotr Dollar and Tsung-Yi Lin, 2015.
     # Licensed under the Simplified BSD License [see coco/license.txt]
-    def __init__(self, cocoGt=None, cocoDt=None, iouType='segm', estimate_dist=False):
+    def __init__(self, cocoGt=None, cocoDt=None, iouType='segm', estimate_dist=False, estimate_yaw=False):
         '''
         Initialize CocoEval using coco APIs for gt and dt
         :param cocoGt: coco object with ground truth annotations
@@ -77,8 +77,13 @@ class COCOeval:
         self.stats = []                     # result summarization
         self.ious = {}                      # ious between all gts and dts
         self.estimate_dist = estimate_dist
-        self.gt_dists = []
-        self.dt_dists = []
+        self.estimate_yaw  = estimate_yaw
+        if estimate_dist:
+            self.gt_dists = []
+            self.dt_dists = []
+        if estimate_yaw:
+            self.gt_yaws = []
+            self.dt_yaws = []
         if not cocoGt is None:
             self.params.imgIds = sorted(cocoGt.getImgIds())
             self.params.catIds = sorted(cocoGt.getCatIds())
@@ -300,6 +305,9 @@ class COCOeval:
                     if self.estimate_dist:
                     	self.gt_dists.append(gt[m]['distance'])
                     	self.dt_dists.append(d['distance'])
+                    if self.estimate_yaw:
+                        self.gt_yaws.append(gt[m]['yaw'])
+                        self.dt_yaws.append(d['yaw'])
                     #print(gt[m]['distance'],d['distance'])
         # set unmatched detections outside of area range to ignore
         a = np.array([d['area']<aRng[0] or d['area']>aRng[1] for d in dt]).reshape((1, len(dt)))
@@ -464,7 +472,8 @@ class COCOeval:
             print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
             return mean_s
         def _summarizeDets():
-            stats = np.zeros((13,)) if self.estimate_dist else np.zeros((12,))
+            additional = self.estimate_dist + self.estimate_yaw
+            stats = np.zeros((12+additional,))
             stats[0] = _summarize(1)
             stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[2])
             stats[2] = _summarize(1, iouThr=.75, maxDets=self.params.maxDets[2])
@@ -477,9 +486,15 @@ class COCOeval:
             stats[9] = _summarize(0, areaRng='small', maxDets=self.params.maxDets[2])
             stats[10] = _summarize(0, areaRng='medium', maxDets=self.params.maxDets[2])
             stats[11] = _summarize(0, areaRng='large', maxDets=self.params.maxDets[2])
-            if self.estimate_dist:
+            if self.estimate_dist and self.estimate_yaw:
             	stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_dists) - np.array(self.gt_dists))))
+                stats[13] = np.sqrt(np.mean(np.square(np.array(self.dt_yaws) - np.array(self.gt_yaws))))
+            elif self.estimate_dist:
+                stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_dists) - np.array(self.gt_dists))))
+            elif self.estimate_yaw:
+                stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_yaws) - np.array(self.gt_yaws))))
             return stats
+            
         def _summarizeKps():
             stats = np.zeros((10,))
             stats[0] = _summarize(1, maxDets=20)
