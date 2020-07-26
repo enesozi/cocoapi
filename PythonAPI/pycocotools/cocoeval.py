@@ -303,11 +303,13 @@ class COCOeval:
                     dtm[tind,dind]  = gt[m]['id']
                     gtm[tind,m]     = d['id']
                     if self.estimate_dist:
-                    	self.gt_dists.append(gt[m]['distance'])
-                    	self.dt_dists.append(d['distance'])
+                        if 'distance' in gt[m]:
+                    	    self.gt_dists.append(gt[m]['distance'])
+                    	    self.dt_dists.append(d['distance'])
                     if self.estimate_yaw:
-                        self.gt_yaws.append(gt[m]['yaw'])
-                        self.dt_yaws.append(d['yaw'])
+                        if 'yaw' in gt[m]:
+                            self.gt_yaws.append(gt[m]['yaw'])
+                            self.dt_yaws.append(d['yaw'])
                     #print(gt[m]['distance'],d['distance'])
         # set unmatched detections outside of area range to ignore
         a = np.array([d['area']<aRng[0] or d['area']>aRng[1] for d in dt]).reshape((1, len(dt)))
