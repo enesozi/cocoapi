@@ -303,11 +303,13 @@ class COCOeval:
                     dtm[tind,dind]  = gt[m]['id']
                     gtm[tind,m]     = d['id']
                     if self.estimate_dist:
-                    	self.gt_dists.append(gt[m]['distance'])
-                    	self.dt_dists.append(d['distance'])
+                        if 'distance' in gt[m]:
+                    	    self.gt_dists.append(gt[m]['distance'])
+                    	    self.dt_dists.append(d['distance'])
                     if self.estimate_yaw:
-                        self.gt_yaws.append(gt[m]['yaw'])
-                        self.dt_yaws.append(d['yaw'])
+                        if 'yaw' in gt[m]:
+                            self.gt_yaws.append(gt[m]['yaw'])
+                            self.dt_yaws.append(d['yaw'])
                     #print(gt[m]['distance'],d['distance'])
         # set unmatched detections outside of area range to ignore
         a = np.array([d['area']<aRng[0] or d['area']>aRng[1] for d in dt]).reshape((1, len(dt)))
@@ -487,7 +489,7 @@ class COCOeval:
             stats[10] = _summarize(0, areaRng='medium', maxDets=self.params.maxDets[2])
             stats[11] = _summarize(0, areaRng='large', maxDets=self.params.maxDets[2])
             if self.estimate_dist and self.estimate_yaw:
-            	stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_dists) - np.array(self.gt_dists))))
+                stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_dists) - np.array(self.gt_dists))))
                 stats[13] = np.sqrt(np.mean(np.square(np.array(self.dt_yaws) - np.array(self.gt_yaws))))
             elif self.estimate_dist:
                 stats[12] = np.sqrt(np.mean(np.square(np.array(self.dt_dists) - np.array(self.gt_dists))))
